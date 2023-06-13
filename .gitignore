@@ -1,0 +1,47 @@
+# Visual Studio generated files
+.vs/
+bin/
+obj/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Node.js dependencies
+node_modules/
+
+# Angular build output
+/dist/
+/*.js.map
+
+# Angular testing
+/karma-coverage/
+
+# Angular IDE specific files
+/.idea/
+/.vscode/
+
+# Angular configuration files
+.angular-cli.json
+.angular-cli/
+.angular/
+.npmrc
+package-lock.json
+yarn.lock
+
+# Compiled output
+/dist/
+/dist-server/
+/dist-client/
+/dist-hybrid/
+
+# Logs and debugging files
+logs/
+*.log
+
+# Dependency lock files
+package-lock.json
+yarn.lock
+
+# IDE-specific files
+.DS_Store

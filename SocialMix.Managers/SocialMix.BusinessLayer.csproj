@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AssemblyName>SocialMix.BusinessLayer</AssemblyName>
+    <RootNamespace>SocialMix.BusinessLayer</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SocialMix.DataLayer\SocialMix.DataLayer.csproj" />
+  </ItemGroup>
+
+</Project>
