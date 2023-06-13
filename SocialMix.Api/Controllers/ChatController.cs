@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
+
 using SocialMix.BusinessLayer.Managers;
 using SocialMix.Models.Models;
 
@@ -10,17 +10,15 @@ namespace SocialMix.Api.Controllers
     [ApiController]
     public class ChatController : ControllerBase
     {
-        private readonly IHubContext<ChatHub> _hubContext;
         private readonly ChatMessageManager _chatMessageManager;
 
-        public ChatController(IHubContext<ChatHub> hubContext, ChatMessageManager chatMessageManager)
+        public ChatController(ChatMessageManager chatMessageManager)
         {
-            _hubContext = hubContext;
             _chatMessageManager = chatMessageManager;
         }
 
         [HttpPost("message")]
-        public IActionResult Message(ChatMessage message)
+        public IActionResult Message([FromBody] ChatMessage message)
         {
             // Validate the message if needed
 

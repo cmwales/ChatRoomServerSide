@@ -16,8 +16,8 @@ public class ChatMessageRepository : BaseRepository
             connection.Open();
 
             var query = @"
-            INSERT INTO ChatMessages (PersonId, UserName, Message, Timestamp)
-            VALUES (@UserId, @UserName, @Message, @Timestamp)";
+            INSERT INTO ChatMessage (PersonId, UserName, Message, Timestamp)
+            VALUES (@PersonId, @UserName, @Message, @Timestamp)";
 
             using (var command = new SqlCommand(query, connection))
             {
