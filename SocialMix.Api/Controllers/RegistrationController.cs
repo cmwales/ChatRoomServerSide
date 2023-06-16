@@ -16,9 +16,9 @@ namespace SocialMix.Api.Controllers
     {
 
         private readonly UserManager userManager;
-        private readonly PersonRepository userRepository;
+        private readonly UserRepository userRepository;
 
-        public RegistrationController(UserManager userManager, PersonRepository userRepository = null)
+        public RegistrationController(UserManager userManager, UserRepository userRepository = null)
         {
             this.userManager = userManager;
             this.userRepository = userRepository;
@@ -27,7 +27,7 @@ namespace SocialMix.Api.Controllers
 
 
         [Route("Register"), HttpPost]
-        public Person Register(Person user)
+        public User Register(User user)
         {
             return this.userManager.RegistgerUser(user);
         }

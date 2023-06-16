@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SocialMix.BusinessLayer.Managers;
+using SocialMix.BusinessLayer.Managers.Security;
 using SocialMix.DataLayer;
 
 
@@ -49,11 +50,14 @@ namespace SocialMix.Api
             //Business Layer Managers
             services.AddScoped<UserManager>();
             services.AddScoped<ChatMessageManager>();
+            services.AddScoped<JwtTokenGeneratorManager > ();
+            services.AddScoped<UserLoginActivityManager>();
  
             
             //Repository layer
-            services.AddScoped<PersonRepository>();
+            services.AddScoped<UserRepository>();
             services.AddScoped<ChatMessageRepository>();
+            services.AddScoped<UserLoginActivityRepository>();
 
 
         }

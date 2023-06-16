@@ -16,12 +16,12 @@ public class ChatMessageRepository : BaseRepository
             connection.Open();
 
             var query = @"
-            INSERT INTO ChatMessage (PersonId, UserName, Message, Timestamp)
-            VALUES (@PersonId, @UserName, @Message, @Timestamp)";
+            INSERT INTO ChatMessage (UserId, UserName, Message, Timestamp)
+            VALUES (@UserId, @UserName, @Message, @Timestamp)";
 
             using (var command = new SqlCommand(query, connection))
             {
-                command.Parameters.AddWithValue("@PersonId", chatMessage.PersonId);
+                command.Parameters.AddWithValue("@UserId", chatMessage.UserId);
                 command.Parameters.AddWithValue("@UserName", chatMessage.UserName);
                 command.Parameters.AddWithValue("@Message", chatMessage.Message);
                 command.Parameters.AddWithValue("@Timestamp", chatMessage.Timestamp);

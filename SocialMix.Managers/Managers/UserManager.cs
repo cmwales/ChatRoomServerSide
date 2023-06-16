@@ -9,14 +9,16 @@ namespace SocialMix.BusinessLayer.Managers
 {
     public class UserManager
     {
-        PersonRepository userRepository;
+        UserRepository userRepository;
+        UserLoginActivity userLoginActivity;
 
-        public UserManager(PersonRepository userRepository = null)
+        public UserManager(UserLoginActivity userLoginActivity, UserRepository userRepository = null)
         {
             this.userRepository = userRepository;
+            this.userLoginActivity = userLoginActivity;
         }
 
-        public Person RegistgerUser(Person user)
+        public User RegistgerUser(User user)
         {
             user = this.userRepository.RegisterUser(user);
 
@@ -24,21 +26,22 @@ namespace SocialMix.BusinessLayer.Managers
         }
 
 
-        public Person AuthenticateUser(string userName, string password)
+        public User AuthenticateUser(string userName, string password)
         {
-
+            
             if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
             {
                 throw new Exception("Invalid Password or UserName");
             }
 
-            Person user = this.userRepository.ValidateCredentials(userName, password);
+            User user = this.userRepository.ValidateCredentials(userName, password);
             if (user is null)
             {
                 throw new Exception("Invalid Password or UserName");
             }
             else
             {
+
                 return user;
             }
 

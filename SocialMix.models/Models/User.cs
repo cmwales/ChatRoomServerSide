@@ -5,10 +5,10 @@ using System.Text;
 
 namespace SocialMix.Models.Models
 {
-    public class Person
+    public class User
     {
         [Required]
-        public int PersonId { get; set; }
+        public int UserId { get; set; }
 
         [Required]
         public string Email { get; set; }
@@ -30,5 +30,6 @@ namespace SocialMix.Models.Models
 
         [Required]
         public int Age { get; set; }
+ 
     }
 }

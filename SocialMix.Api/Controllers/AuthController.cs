@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using SocialMix.Api.ViewModels;
 using SocialMix.BusinessLayer.Managers;
+using SocialMix.BusinessLayer.Managers.Security;
 using SocialMix.DataLayer;
 using SocialMix.Models.Models;
 
@@ -21,12 +22,14 @@ namespace SocialMix.Api.Controllers
     {
 
         private readonly UserManager userManager;
-        private readonly PersonRepository userRepository;
+        private readonly UserLoginActivityManager userLoginActivityManager;
+        private readonly JwtTokenGeneratorManager jwtTokenGeneratorManager;
 
-        public AuthController(UserManager userManager, PersonRepository userRepository = null)
+        public AuthController(UserManager userManager, JwtTokenGeneratorManager jwtTokenGeneratorManager, UserLoginActivityManager userLoginActivityManager)
         {
             this.userManager = userManager;
-            this.userRepository = userRepository;
+            this.jwtTokenGeneratorManager = jwtTokenGeneratorManager;
+            this.userLoginActivityManager = userLoginActivityManager;
         }
 
 
@@ -34,40 +37,65 @@ namespace SocialMix.Api.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
             string username = request.Username;
             string password = request.Password;
 
-            Person user = this.userManager.AuthenticateUser(username, password);
-            
-            // Authenticate user and generate token
-            var token = GenerateToken(username);
-
-            // Return token
-            return Ok(new { token });
-        }
-
-        private string GenerateToken(string username)
-        {
-            var claims = new[]
+            try
             {
-                new Claim(ClaimTypes.Name, username),
-                // Add additional claims as needed
-            };
+                if (this.userLoginActivityManager.IsAccountLocked(username))
+                {
+                    throw new Exception("Account is locked out. Please wait 15 minutes and try again");
+                }
+                else
+                {
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TenTwentyOne1021TenTwentyOne1021"));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                    // Check if the maximum number of login attempts has been reached
 
-            var token = new JwtSecurityToken(
-                issuer: "cmwales",
-                audience: "groupies",
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
-                signingCredentials: creds);
+                    User user = this.userManager.AuthenticateUser(username, password);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+                    var sessionId = this.jwtTokenGeneratorManager.GenerateSessionId();
+
+                    var token = this.jwtTokenGeneratorManager.GenerateToken(user, DateTime.Now.AddMinutes(30));
+                    this.userLoginActivityManager.RecordLoginSuccess(user.UserId, sessionId, ipAddress);
+
+                    // Set session ID in a cookie
+                    Response.Cookies.Append("sessionId", sessionId, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = DateTimeOffset.UtcNow.AddMinutes(30)
+                    });
+
+                    // Return token
+                    return Ok(new { token });
+                }
+
+            }
+            catch (Exception ex)
+            {
+                // Record failed login attempt
+                this.userLoginActivityManager.RecordFailedLoginAttempt(username, ipAddress, ex.Message);
+
+                // Get the number of failed login attempts for the user
+                int failedAttempts = this.userLoginActivityManager.GetFailedLoginAttempts(username);
+
+                // Check if the maximum number of login attempts has been reached
+                if (failedAttempts >= 5)
+                {
+                    // Set the status to indicate lockout
+                    this.userLoginActivityManager.LockoutUser(username, ipAddress);
+
+                    return BadRequest(new { message = "Too many failed login attempts. Your account has been locked out. Please try again later." });
+                }
+
+                throw;
+            }
         }
 
-      
+
+
         [HttpPost("negotiate")]
         public IActionResult Negotiate(int negotiateVersion = 1)
         {

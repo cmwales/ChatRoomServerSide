@@ -8,17 +8,17 @@ using Microsoft.Extensions.Configuration;
 
 namespace SocialMix.DataLayer
 {
-    public class PersonRepository : BaseRepository
+    public class UserRepository : BaseRepository
     {
 
 
 
-        public PersonRepository(IConfiguration configuration) : base(configuration)
+        public UserRepository(IConfiguration configuration) : base(configuration)
         {
 
         }
 
-            public Person Login(string emailOrUsername, string password)
+        public User Login(string emailOrUsername, string password)
         {
             // Hash the provided password
             string hashedPassword = HashPassword(password);
@@ -30,7 +30,7 @@ namespace SocialMix.DataLayer
                 // Prepare the SQL query
                 var query = @"
                 SELECT *
-                FROM Person
+                FROM User
                 WHERE Email = @EmailOrUsername OR UserName = @EmailOrUsername";
 
                 using var command = new SqlCommand(query, connection);
@@ -41,7 +41,7 @@ namespace SocialMix.DataLayer
                     if (reader.Read())
                     {
                         // Retrieve the user details from the reader
-                        var user = new Person
+                        var user = new User
                         {
                             Email = reader.GetString(reader.GetOrdinal("Email")),
                             Password = reader.GetString(reader.GetOrdinal("Password")),
@@ -65,18 +65,18 @@ namespace SocialMix.DataLayer
             return null; // Invalid credentials
         }
 
-        public Person RegisterUser(Person user)
+        public User RegisterUser(User user)
         {
             string hashedPassword = HashPassword(user.Password);
-   
+
 
             using (var connection = this.CreateConnection())
             {
                 connection.Open();
 
                 var query = @"
-                            INSERT INTO Person (Email, Password, UserName, Country, State, Gender, Age)
-                            OUTPUT INSERTED.PersonId
+                            INSERT INTO User (Email, Password, UserName, Country, State, Gender, Age)
+                            OUTPUT INSERTED.UserId
                             VALUES (@Email, @Password, @UserName, @Country, @State, @Gender, @Age)";
 
                 using (var command = new SqlCommand(query, connection))
@@ -89,8 +89,8 @@ namespace SocialMix.DataLayer
                     command.Parameters.AddWithValue("@Gender", user.Gender);
                     command.Parameters.AddWithValue("@Age", user.Age);
 
-                    // Execute the query and retrieve the generated PersonId
-                    user.PersonId = (int)command.ExecuteScalar();
+                    // Execute the query and retrieve the generated UserId
+                    user.UserId = (int)command.ExecuteScalar();
                 }
             }
 
@@ -99,23 +99,23 @@ namespace SocialMix.DataLayer
         }
 
 
-        public Person ValidateCredentials(string username, string password)
+        public User ValidateCredentials(string username, string password)
         {
             using (var connection = this.CreateConnection())
             {
                 connection.Open();
 
                 // Create a SQL command to retrieve the user data
-                var command = new SqlCommand("SELECT PersonId, Email, Password, UserName, Country, State, Gender, Age FROM Person WHERE UserName = @Username", connection);
+                var command = new SqlCommand("SELECT UserId, Email, Password, UserName, Country, State, Gender, Age FROM User WHERE UserName = @Username", connection);
                 command.Parameters.AddWithValue("@Username", username);
 
                 using (var reader = command.ExecuteReader())
                 {
                     if (reader.Read())
                     {
-                        Person user = new Person
+                        User user = new User
                         {
-                            PersonId = reader.GetInt32(reader.GetOrdinal("PersonId")),
+                            UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
                             Email = reader.GetString(reader.GetOrdinal("Email")),
                             Password = reader.GetString(reader.GetOrdinal("Password")),
                             UserName = reader.GetString(reader.GetOrdinal("UserName")),
