@@ -10,12 +10,12 @@ namespace SocialMix.BusinessLayer.Managers
     public class UserManager
     {
         UserRepository userRepository;
-        UserLoginActivity userLoginActivity;
+   
 
-        public UserManager(UserLoginActivity userLoginActivity, UserRepository userRepository = null)
+        public UserManager(UserRepository userRepository = null)
         {
             this.userRepository = userRepository;
-            this.userLoginActivity = userLoginActivity;
+           
         }
 
         public User RegistgerUser(User user)

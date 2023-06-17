@@ -20,9 +20,7 @@ namespace SocialMix.DataLayer
 
         public User Login(string emailOrUsername, string password)
         {
-            // Hash the provided password
-            string hashedPassword = HashPassword(password);
-
+           
             using (var connection = this.CreateConnection())
             {
                 connection.Open();
@@ -45,6 +43,7 @@ namespace SocialMix.DataLayer
                         {
                             Email = reader.GetString(reader.GetOrdinal("Email")),
                             Password = reader.GetString(reader.GetOrdinal("Password")),
+                            Salt = reader.GetString(reader.GetOrdinal("Salt")),
                             UserName = reader.GetString(reader.GetOrdinal("UserName")),
                             Country = reader.GetString(reader.GetOrdinal("Country")),
                             State = reader.GetString(reader.GetOrdinal("State")),
@@ -53,21 +52,30 @@ namespace SocialMix.DataLayer
 
                         };
 
+                        // Hash the provided password
+                        string hashedPassword = HashPassword(password, user.Salt);
+
+
                         // Check if the password matches
                         if (user.Password == hashedPassword)
                         {
                             return user; // Login successful
                         }
                     }
+                    else
+                    {
+                        throw new Exception("Invalid Username or password");
+                    }
                 }
             }
 
-            return null; // Invalid credentials
+            throw new Exception("Invalid Username or password");
         }
 
         public User RegisterUser(User user)
         {
-            string hashedPassword = HashPassword(user.Password);
+            string salt = GenerateSalt();
+            string hashedPassword = HashPassword(user.Password, salt);
 
 
             using (var connection = this.CreateConnection())
@@ -98,7 +106,6 @@ namespace SocialMix.DataLayer
             return user;
         }
 
-
         public User ValidateCredentials(string username, string password)
         {
             using (var connection = this.CreateConnection())
@@ -106,7 +113,7 @@ namespace SocialMix.DataLayer
                 connection.Open();
 
                 // Create a SQL command to retrieve the user data
-                var command = new SqlCommand("SELECT UserId, Email, Password, UserName, Country, State, Gender, Age FROM User WHERE UserName = @Username", connection);
+                var command = new SqlCommand("SELECT UserId, Email, Password, Salt, UserName, Country, State, Gender, Age FROM User WHERE UserName = @Username", connection);
                 command.Parameters.AddWithValue("@Username", username);
 
                 using (var reader = command.ExecuteReader())
@@ -118,6 +125,7 @@ namespace SocialMix.DataLayer
                             UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
                             Email = reader.GetString(reader.GetOrdinal("Email")),
                             Password = reader.GetString(reader.GetOrdinal("Password")),
+                            Salt = reader.GetString(reader.GetOrdinal("Salt")),
                             UserName = reader.GetString(reader.GetOrdinal("UserName")),
                             Country = reader.GetString(reader.GetOrdinal("Country")),
                             State = reader.GetString(reader.GetOrdinal("State")),
@@ -126,7 +134,7 @@ namespace SocialMix.DataLayer
                         };
 
                         // Verify the provided password against the stored hashed password
-                        bool isValidPassword = VerifyPassword(password, user.Password);
+                        bool isValidPassword = VerifyPassword(password, user.Password, user.Salt);
 
                         if (isValidPassword)
                         {
@@ -139,22 +147,36 @@ namespace SocialMix.DataLayer
             return null; // Invalid credentials or user not found
         }
 
-        private bool VerifyPassword(string password, string storedHash)
+        private bool VerifyPassword(string password, string storedHash, string salt)
         {
-            string hashedPassword = HashPassword(password);
+            string hashedPassword = HashPassword(password, salt);
             return string.Equals(hashedPassword, storedHash);
         }
 
-
-
-        private string HashPassword(string password)
+        private string HashPassword(string password, string salt)
         {
             using (var sha256 = SHA256.Create())
             {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                var saltedPassword = password + salt;
+                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(saltedPassword));
                 return Convert.ToBase64String(hashedBytes);
             }
         }
+
+        private string GenerateSalt()
+        {
+            // Generate a random salt value using a cryptographic RNG
+            byte[] saltBytes = new byte[32];
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                rng.GetBytes(saltBytes);
+            }
+
+            // Convert the salt bytes to a Base64 string
+            string salt = Convert.ToBase64String(saltBytes);
+            return salt;
+        }
+
     }
 
 }

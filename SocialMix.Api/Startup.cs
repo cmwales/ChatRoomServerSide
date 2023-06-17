@@ -7,25 +7,20 @@ using SocialMix.BusinessLayer.Managers;
 using SocialMix.BusinessLayer.Managers.Security;
 using SocialMix.DataLayer;
 
-
 namespace SocialMix.Api
 {
     public class Startup
     {
-
-        private readonly IConfiguration _configuration;
-
         public Startup(IConfiguration configuration)
         {
-            _configuration = configuration;
+            Configuration = configuration;
         }
 
+        public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-           
 
             services.AddCors(options =>
             {
@@ -35,39 +30,36 @@ namespace SocialMix.Api
                         .AllowAnyHeader()
                         .WithOrigins("http://localhost:4200")
                         .AllowCredentials()
-                        .WithExposedHeaders("Content-Disposition") // Add this line if needed
-                        .SetIsOriginAllowedToAllowWildcardSubdomains() // Add this line if needed
+                        .WithExposedHeaders("Content-Disposition")
+                        .SetIsOriginAllowedToAllowWildcardSubdomains()
                         .WithOrigins("http://localhost:4200")
-                        .SetIsOriginAllowed((host) => true); // Add this line if needed
+                        .SetIsOriginAllowed((host) => true);
                 });
             });
 
             services.AddSignalR();
 
-            services.AddSingleton<DataLayer.IConfigurationProvider>(provider => new DataLayer.ConfigurationProvider(_configuration));
+            services.AddSingleton<SocialMix.DataLayer.IConfigurationProvider>(provider => new SocialMix.DataLayer.ConfigurationProvider(Configuration));
 
-            
-            //Business Layer Managers
+            // JWT Configuration
+            string secretKey = Configuration.GetValue<string>("Jwt:SecretKey");
+            string issuer = Configuration.GetValue<string>("Jwt:Issuer");
+            string audience = Configuration.GetValue<string>("Jwt:Audience");
+            services.AddSingleton<JwtTokenGeneratorManager>(new JwtTokenGeneratorManager(secretKey, issuer, audience));
+
+            // Business Layer Managers
             services.AddScoped<UserManager>();
             services.AddScoped<ChatMessageManager>();
-            services.AddScoped<JwtTokenGeneratorManager > ();
             services.AddScoped<UserLoginActivityManager>();
- 
-            
-            //Repository layer
+
+            // Repository Layer
             services.AddScoped<UserRepository>();
             services.AddScoped<ChatMessageRepository>();
             services.AddScoped<UserLoginActivityRepository>();
-
-
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-
-            
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -76,25 +68,18 @@ namespace SocialMix.Api
             app.UseCors("CorsPolicy");
             app.UseHttpsRedirection();
 
-           
-          
-
-          
-
             app.UseRouting();
-
 
             app.UseAuthentication();
             app.UseAuthorization();
 
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<ChatHub>("/api/chathub"); // Configure the SignalR hub endpoint
+                endpoints.MapHub<ChatHub>("/api/chathub");
             });
-            app.UseWebSockets();
 
+            app.UseWebSockets();
         }
     }
 }
